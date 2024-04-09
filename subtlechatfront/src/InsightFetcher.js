@@ -28,18 +28,21 @@ function InsightFetcher() {
 
   return (
     <div>
-      <input
-        type="text"
-        value={userInput}
-        onChange={(e) => setUserInput(e.target.value)}
-        placeholder="Enter your prompt"
-      />
-      <button onClick={fetchInsight}>Send</button>
-      <div style={{ maxHeight: '300px', overflowY: 'scroll' }}>
+      <div style={{ maxHeight: '1000px', overflowY: 'scroll' }}>
         {messages.map((msg, index) => (
           <ChatMessage key={index} message={msg.text} isOutgoing={msg.isOutgoing} />
         ))}
-        {isTyping && <div style={{ fontStyle: 'italic', color: '#AAA' }}>Typing...</div>}
+        {isTyping && <div style={{ fontStyle: 'italic', color: '#AAA', textAlign: 'left' }}>Typing...</div>}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}> {/* Right-align input and button */}
+        <input
+          type="text"
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
+          placeholder="Text message"
+          style={{ marginRight: '10px', padding: '10px', width: 'calc(100% - 120px)' }} // Ensure input field is appropriately sized
+        />
+        <button onClick={fetchInsight} style={{ padding: '10px 20px' }}>Send</button>
       </div>
     </div>
   );

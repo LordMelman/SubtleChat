@@ -1,13 +1,12 @@
-// ChatMessage.js
 function ChatMessage({ message, isOutgoing }) {
     return (
       <div style={{ 
-        textAlign: isOutgoing ? 'right' : 'left', 
-        margin: '10px', 
-        padding: '5px', 
+        maxWidth: '60%', // Limit the width of messages
+        margin: isOutgoing ? '10px 0 10px auto' : '10px auto 10px 0', // Right align if outgoing
+        padding: '10px',
         backgroundColor: isOutgoing ? '#add8e6' : '#90ee90',
-        display: 'inline-block',
-        borderRadius: '10px',
+        textAlign: isOutgoing ? 'right' : 'left',
+        borderRadius: '20px',
       }}>
         {message}
       </div>
