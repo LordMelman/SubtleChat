@@ -8,3 +8,9 @@
 ```
 uvicorn subtleChatBackend:app --reload
 ```
+
+### Frontend:
+
+```
+npm start
+```
