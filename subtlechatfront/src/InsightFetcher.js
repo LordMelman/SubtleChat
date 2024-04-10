@@ -14,34 +14,37 @@ function InsightFetcher() {
     setMessages([aiMessage]);
 }, []);
 
-  const fetchInsight = async () => {
-    if (awaitingName) {
-        // The first user message is assumed to be their name
-        setUserName(userInput);
-        setAwaitingName(false); // No longer waiting for the user's name
-        const userMessage = { text: userInput, isOutgoing: true };
-        setMessages((prevMessages) => [...prevMessages, userMessage]);
-        setUserInput(''); // Clear input after handling
-    } else {
+const fetchInsight = async () => {
+  const outgoingMessage = { text: userInput, isOutgoing: true }; // This line prepares the outgoing message.
 
-    const outgoingMessage = { text: userInput, isOutgoing: true };
-    setMessages([...messages, outgoingMessage]);
+  if (awaitingName) {
+    // The first user message is assumed to be their name
+    setUserName(userInput);
+    setAwaitingName(false); // No longer waiting for the user's name
+    const aiGreeting = { text: `Hello ${userInput}! How are you doing today?`, isOutgoing: false }; // AI greets user by name
+    setMessages((prevMessages) => [...prevMessages, outgoingMessage, aiGreeting]);
+    setUserInput(''); // Clear input after handling
+  } else {
+    // Add the user's request as an outgoing message immediately.
+    setMessages((prevMessages) => [...prevMessages, outgoingMessage]);
     setIsTyping(true); // Start showing typing indicator
 
     try {
       const response = await axios.post('http://127.0.0.1:8000/get_insight/', { user_prompt: userInput });
       const incomingMessage = { text: response.data.insight, isOutgoing: false };
-      setMessages((prevMessages) => [...prevMessages, incomingMessage]); // Ensure we're working with the latest state
+      // Ensure we're working with the latest state and add the AI's response.
+      setMessages((prevMessages) => [...prevMessages, incomingMessage]);
     } catch (error) {
       console.error('Error fetching insight:', error);
       const errorMessage = { text: 'Failed to fetch insight.', isOutgoing: false };
+      // Add the error message as an incoming message.
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     }
 
     setIsTyping(false); 
-    setUserInput(''); 
-    }
-  };
+    setUserInput(''); // Clear input after sending
+  }
+};
 
   return (
     <div>
@@ -52,14 +55,19 @@ function InsightFetcher() {
         {isTyping && <div style={{ fontStyle: 'italic', color: '#AAA', textAlign: 'left' }}>Typing...</div>}
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}> {/* Right-align input and button */}
-        <input
+      <input
           type="text"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Text message"
           style={{ marginRight: '10px', padding: '10px', width: 'calc(100% - 120px)' }} 
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              fetchInsight();
+            }
+          }}
         />
-        <button onClick={fetchInsight} style={{ padding: '10px 20px' }}>Send</button>
+        <button onClick={fetchInsight} style={{ padding: '10px 20px' }}>Send</button>        
       </div>
     </div>
   );
