@@ -14,3 +14,11 @@ uvicorn subtleChatBackend:app --reload
 ```
 npm start
 ```
+
+## Dependencies
+
+### Frontend:
+
+```
+npm install
+```
