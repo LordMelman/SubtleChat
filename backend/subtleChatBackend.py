@@ -5,13 +5,30 @@ from langchain_openai import OpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel
-from pymongo import MongoClient
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import os
 
-
-
 load_dotenv()
+
+
+mongodb_password = os.getenv('SUBTLE_CLUSTER_PASS')
+mongodb_base_uri = os.getenv('MONGODB_CONNECTION_URI')
+mongodb_uri = mongodb_base_uri.replace('marmjohn:@', f'marmjohn:{mongodb_password}@')
+print(mongodb_uri)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.mongodb_client = MongoClient(mongodb_uri)
+    app.db = app.mongodb_client[os.environ["DB_NAME"]]
+    print("Connected to the MongoDB database!")
+    yield
+    app.mongodb_client.close()
+    print("Disonnected from the MongoDB database!")
+
+app = FastAPI(lifespan=lifespan)
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,15 +51,7 @@ answer_chain = LLMChain(llm=llm, prompt=prompt_template)
 
 class UserPrompt(BaseModel):
     user_prompt: str
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    app.mongodb_client = MongoClient(os.environ["MONGODB_CONNECTION_URI"])
-    app.db = app.mongodb_client[os.environ["DB_NAME"]]
-    print("Connected to the MongoDB database!")
-    yield
-    app.mongodb_client.close()
 
-app = FastAPI(lifespan=lifespan)
 
 @app.post("/get_insight/")
 async def get_insight(user_prompt: UserPrompt):
