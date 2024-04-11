@@ -1,11 +1,17 @@
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import OpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
-app = FastAPI()
+
+
+load_dotenv()
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +34,15 @@ answer_chain = LLMChain(llm=llm, prompt=prompt_template)
 
 class UserPrompt(BaseModel):
     user_prompt: str
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.mongodb_client = MongoClient(os.environ["MONGODB_CONNECTION_URI"])
+    app.db = app.mongodb_client[os.environ["DB_NAME"]]
+    print("Connected to the MongoDB database!")
+    yield
+    app.mongodb_client.close()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.post("/get_insight/")
 async def get_insight(user_prompt: UserPrompt):
