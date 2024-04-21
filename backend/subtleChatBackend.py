@@ -7,11 +7,11 @@ from langchain.prompts import PromptTemplate
 from pydantic import BaseModel
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from pymongo import ReturnDocument
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
-
 
 mongodb_password = os.getenv('SUBTLE_CLUSTER_PASS')
 mongodb_base_uri = os.getenv('MONGODB_CONNECTION_URI')
@@ -21,6 +21,7 @@ print(mongodb_uri)
 async def lifespan(app: FastAPI):
     app.mongodb_client = MongoClient(mongodb_uri)
     app.db = app.mongodb_client[os.environ["DB_NAME"]]
+    app.db.users.create_index("user_id", unique=True)
     print("Connected to the MongoDB database!")
     yield
     app.mongodb_client.close()
@@ -51,13 +52,28 @@ answer_chain = LLMChain(llm=llm, prompt=prompt_template)
 
 class UserPrompt(BaseModel):
     user_prompt: str
+    user_id: str
 
+async def log_interaction(db, user_id, user_prompt, insight):
+    user_doc = db.users.find_one_and_update(
+        {"_id": user_id},
+        {"$push": {"interactions": {"prompt": user_prompt, "response": insight}}},
+        return_document=ReturnDocument.AFTER,
+        upsert=True  # Create the document if it does not exist
+    )
+    return user_doc
 
 @app.post("/get_insight/")
 async def get_insight(user_prompt: UserPrompt):
     try:
         response = answer_chain.invoke(user_prompt.user_prompt)
-        return {"insight": response.get("text")}
+        insight_text = response.get("text")
+
+        # Log this interaction in the database
+        user_doc = await log_interaction(app.db, user_prompt.user_id, user_prompt.user_prompt, insight_text)
+        
+
+        return {"insight": insight_text, "user": user_doc}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

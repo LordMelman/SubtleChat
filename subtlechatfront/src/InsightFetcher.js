@@ -6,7 +6,7 @@ function InsightFetcher() {
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false); // Add isTyping state
-  const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState('');
   const [awaitingName, setAwaitingName] = useState(true);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const fetchInsight = async () => {
 
   if (awaitingName) {
     // The first user message is assumed to be their name
-    setUserName(userInput);
+    setUserId(userInput);
     setAwaitingName(false); // No longer waiting for the user's name
     const aiGreeting = { text: `Hello ${userInput}! How are you doing today?`, isOutgoing: false }; // AI greets user by name
     setMessages((prevMessages) => [...prevMessages, outgoingMessage, aiGreeting]);
@@ -30,7 +30,7 @@ const fetchInsight = async () => {
     setIsTyping(true); // Start showing typing indicator
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/get_insight/', { user_prompt: userInput });
+      const response = await axios.post('http://127.0.0.1:8000/get_insight/', { user_prompt: userInput, user_id: userId });
       const incomingMessage = { text: response.data.insight, isOutgoing: false };
       // Ensure we're working with the latest state and add the AI's response.
       setMessages((prevMessages) => [...prevMessages, incomingMessage]);
